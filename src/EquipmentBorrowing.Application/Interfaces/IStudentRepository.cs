@@ -1,9 +1,10 @@
-﻿using EquipmentBorrowing.Domain;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Application.Interfaces;
 
-public interface IBorrowingRepository
+public interface IStudentRepository
 {
-    Task<int> GetActiveCountByStudentIdAsync(int studentId, CancellationToken ct = default);
-    Task AddAsync(Borrowing borrowing, CancellationToken ct = default);
+    Task<Student?> GetByIdAsync(int id, CancellationToken ct = default);
 }
