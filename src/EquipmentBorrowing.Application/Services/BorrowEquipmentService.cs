@@ -7,45 +7,38 @@ namespace EquipmentBorrowing.Application.Services;
 
 public class BorrowEquipmentService
 {
-    private readonly IStudentRepository _studentRepo;
-    private readonly IEquipmentRepository _equipmentRepo;
-    private readonly IBorrowingRepository _borrowingRepo;
-    private const int MaxAllowed = 3;
+    private readonly IStudentRepository _studentRepository;
+    private readonly IEquipmentRepository _equipmentRepository;
+    private readonly IBorrowingRepository _borrowingRepository;
 
-    // Part F: Receiving dependencies via constructor injection
     public BorrowEquipmentService(
-        IStudentRepository studentRepo,
-        IEquipmentRepository equipmentRepo,
-        IBorrowingRepository borrowingRepo)
+        IStudentRepository studentRepository,
+        IEquipmentRepository equipmentRepository,
+        IBorrowingRepository borrowingRepository)
     {
-        _studentRepo = studentRepo;
-        _equipmentRepo = equipmentRepo;
-        _borrowingRepo = borrowingRepo;
+        _studentRepository = studentRepository;
+        _equipmentRepository = equipmentRepository;
+        _borrowingRepository = borrowingRepository;
     }
 
-    public async Task<bool> ExecuteAsync(int studentId, int equipmentId, int durationDays)
+    public async Task<bool> ExecuteAsync(int studentId, int equipmentId, int days)
     {
-        var student = await _studentRepo.GetByIdAsync(studentId);
-        if (student == null || !student.IsAllowedToBorrow) return false;
+        var student = await _studentRepository.GetByIdAsync(studentId);
+        if (student == null || !student.IsAllowedToBorrow) return false; // Exists & Allowed
 
-        var equipment = await _equipmentRepo.GetByIdAsync(equipmentId);
-        if (equipment == null || !equipment.IsAvailable) return false;
+        var equipment = await _equipmentRepository.GetByIdAsync(equipmentId);
+        if (equipment == null || !equipment.IsAvailable) return false; // Exists & Available
 
-        int activeCount = await _borrowingRepo.GetActiveCountByStudentIdAsync(studentId);
-        if (activeCount >= MaxAllowed) return false;
+        var activeCount = await _borrowingRepository.GetActiveCountByStudentIdAsync(studentId);
+        if (activeCount >= 3) return false; // Max limit check
 
-        equipment.MarkAsBorrowed();
-        await _equipmentRepo.UpdateAsync(equipment);
+        equipment.IsAvailable = false;
+        await _equipmentRepository.UpdateAsync(equipment);
 
-        var record = new Borrowing(
-            Random.Shared.Next(1, 1000),
-            studentId,
-            equipmentId,
-            DateTime.UtcNow,
-            DateTime.UtcNow.AddDays(durationDays)
-        );
+        // Date calculations are now handled automatically by the constructor
+        var borrowing = new Borrowing(new Random().Next(1, 1000), studentId, equipmentId, days);
+        await _borrowingRepository.AddAsync(borrowing);
 
-        await _borrowingRepo.AddAsync(record);
         return true;
     }
 }

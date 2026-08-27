@@ -1,21 +1,23 @@
-﻿namespace EquipmentBorrowing.Domain;
+﻿using System;
+
+namespace EquipmentBorrowing.Domain;
 
 public class Borrowing
 {
-    public int Id { get; }
-    public int StudentId { get; }
-    public int EquipmentId { get; }
-    public DateTime DateBorrowed { get; }
-    public DateTime ExpectedReturnDate { get; }
-    public BorrowingStatus Status { get; private set; }
+    public int Id { get; set; }
+    public int StudentId { get; set; }
+    public int EquipmentId { get; set; }
+    public DateTime BorrowedDate { get; set; }
+    public DateTime ExpectedReturnDate { get; set; }
+    public BorrowingStatus Status { get; set; }
 
-    public Borrowing(int id, int studentId, int equipmentId, DateTime dateBorrowed, DateTime expectedReturnDate)
+    public Borrowing(int id, int studentId, int equipmentId, int daysToBorrow)
     {
         Id = id;
         StudentId = studentId;
         EquipmentId = equipmentId;
-        DateBorrowed = dateBorrowed;
-        ExpectedReturnDate = expectedReturnDate;
+        BorrowedDate = DateTime.Now;
+        ExpectedReturnDate = DateTime.Now.AddDays(daysToBorrow);
         Status = BorrowingStatus.Active;
     }
 }
