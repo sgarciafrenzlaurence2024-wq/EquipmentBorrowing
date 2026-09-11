@@ -13,11 +13,24 @@ public class InMemoryRepositories : IStudentRepository, IEquipmentRepository, IB
     public List<Equipment> Equipments { get; } = new();
     public List<Borrowing> Borrowings { get; } = new();
 
+    public InMemoryRepositories()
+    {
+        Equipments.Add(new Equipment(1, "Android Smartphone (NoteGuard Test Device)", true));
+        Equipments.Add(new Equipment(2, "Cisco Catalyst 2960 Switch", true));
+        Equipments.Add(new Equipment(3, "Systems Analysis Toolkit", true));
+
+        Students.Add(new Student(1, "Alice Johnson", true));
+        Students.Add(new Student(2, "Bob Smith", true));
+    }
+
     // --- IStudentRepository Implementation ---
     Task<Student?> IStudentRepository.GetByIdAsync(int id, CancellationToken ct)
     {
         return Task.FromResult(Students.FirstOrDefault(s => s.Id == id));
     }
+
+    Task<IEnumerable<Student>> IStudentRepository.GetAllAsync()
+        => Task.FromResult<IEnumerable<Student>>(Students);
 
     // --- IEquipmentRepository Implementation ---
     Task<Equipment?> IEquipmentRepository.GetByIdAsync(int id, CancellationToken ct)
@@ -31,6 +44,9 @@ public class InMemoryRepositories : IStudentRepository, IEquipmentRepository, IB
         if (existing != null) existing.IsAvailable = equipment.IsAvailable;
         return Task.CompletedTask;
     }
+
+    Task<IEnumerable<Equipment>> IEquipmentRepository.GetAllAsync()
+        => Task.FromResult<IEnumerable<Equipment>>(Equipments);
 
     // --- IBorrowingRepository Implementation ---
     Task<int> IBorrowingRepository.GetActiveCountByStudentIdAsync(int studentId, CancellationToken ct)
@@ -55,4 +71,7 @@ public class InMemoryRepositories : IStudentRepository, IEquipmentRepository, IB
         if (existing != null) existing.Status = borrowing.Status;
         return Task.CompletedTask;
     }
+
+    Task<IEnumerable<Borrowing>> IBorrowingRepository.GetAllAsync()
+        => Task.FromResult<IEnumerable<Borrowing>>(Borrowings);
 }

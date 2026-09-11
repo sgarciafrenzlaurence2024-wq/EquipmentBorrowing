@@ -21,7 +21,7 @@ var borrowService = new BorrowEquipmentService(db, db, db);
 var returnService = new ReturnEquipmentService(db, db);
 
 // Test 1: Max Borrowing Limit
-Console.WriteLine("--- TEST 1: Frenz Borrowing Limit Check ---");
+Console.WriteLine("--- TEST 1: Maximum Borrowing Limit Check ---");
 await borrowService.ExecuteAsync(studentId: 1, equipmentId: 101, days: 3);
 await borrowService.ExecuteAsync(studentId: 1, equipmentId: 102, days: 3);
 await borrowService.ExecuteAsync(studentId: 1, equipmentId: 103, days: 3);

@@ -10,4 +10,5 @@ public interface IBorrowingRepository
     Task AddAsync(Borrowing borrowing, CancellationToken ct = default);
     Task<Borrowing?> GetByIdAsync(int id, CancellationToken ct = default);
     Task UpdateAsync(Borrowing borrowing, CancellationToken ct = default);
+    Task<System.Collections.Generic.IEnumerable<EquipmentBorrowing.Domain.Borrowing>> GetAllAsync();
 }

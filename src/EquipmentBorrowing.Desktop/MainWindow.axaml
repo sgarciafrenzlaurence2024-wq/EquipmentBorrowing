@@ -1,0 +1,31 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+        xmlns:views="using:EquipmentBorrowing.Desktop.Views"
+        x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Campus Equipment" Width="360" Height="740"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid RowDefinitions="*, Auto">
+        <!-- Dynamic Content Area -->
+        <ContentControl Grid.Row="0" Content="{Binding CurrentView}" Margin="15">
+            <ContentControl.DataTemplates>
+                <DataTemplate DataType="{x:Type vm:EquipmentViewModel}">
+                    <views:EquipmentView/>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vm:BorrowingsViewModel}">
+                    <views:BorrowingsView/>
+                </DataTemplate>
+            </ContentControl.DataTemplates>
+        </ContentControl>
+
+        <!-- Bottom Navigation Bar -->
+        <Border Grid.Row="1" Background="#1E1E2C" Padding="5">
+            <Grid ColumnDefinitions="*, *">
+                <Button Grid.Column="0" Content="Equipment" Command="{Binding NavigateToEquipmentCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15" Margin="2" Foreground="White" Background="#33334C"/>
+                <Button Grid.Column="1" Content="Borrowings" Command="{Binding NavigateToBorrowingsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15" Margin="2" Foreground="White" Background="#33334C"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
