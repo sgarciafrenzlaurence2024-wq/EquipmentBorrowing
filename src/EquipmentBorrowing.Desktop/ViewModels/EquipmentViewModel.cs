@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EquipmentBorrowing.Application.Interfaces;
@@ -17,9 +18,11 @@ public partial class EquipmentViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<Equipment> _equipments = new();
+    public ObservableCollection<Equipment> EquipmentList => Equipments;
 
     [ObservableProperty]
     private ObservableCollection<Student> _students = new();
+    public ObservableCollection<Student> StudentList => Students;
 
     [ObservableProperty]
     private Equipment? _selectedEquipment;
@@ -41,30 +44,49 @@ public partial class EquipmentViewModel : ObservableObject
         _equipmentRepository = equipmentRepository;
         _studentRepository = studentRepository;
         _borrowEquipmentService = borrowEquipmentService;
-
-        _ = LoadDataAsync();
+        // Data is loaded by MainWindowViewModel when this view is shown
     }
 
-    private async Task LoadDataAsync()
+    public async Task LoadDataAsync()
     {
-        var equipments = await _equipmentRepository.GetAllAsync();
-        var students = await _studentRepository.GetAllAsync();
+        try
+        {
+            var equipments = await _equipmentRepository.GetAllAsync();
+            var students = await _studentRepository.GetAllAsync();
 
-        foreach (var eq in equipments) Equipments.Add(eq);
-        foreach (var st in students) Students.Add(st);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Equipments = new ObservableCollection<Equipment>(equipments);
+                Students = new ObservableCollection<Student>(students);
+
+                if (Equipments.Count == 0)
+                {
+                    Equipments.Add(new Equipment(999, "⚠️ Database is empty!"));
+                }
+                if (Students.Count == 0)
+                {
+                    Students.Add(new Student(999, "⚠️ Database is empty!"));
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                StatusMessage = $"DB Load Error: {ex.Message}";
+            });
+        }
     }
 
     [RelayCommand]
     private async Task BorrowAsync()
     {
-        // Presentation Validation
         if (SelectedEquipment == null || SelectedStudent == null || ExpectedReturnDate == null)
         {
             StatusMessage = "Please select a student, equipment, and date.";
             return;
         }
 
-        // Calculate how many days the equipment will be borrowed
         int borrowDays = (ExpectedReturnDate.Value.Date - DateTime.Now.Date).Days;
 
         if (borrowDays <= 0)
@@ -75,7 +97,6 @@ public partial class EquipmentViewModel : ObservableObject
 
         try
         {
-            // Pass the calculated 'borrowDays' integer instead of a DateTime object
             bool success = await _borrowEquipmentService.ExecuteAsync(
                 SelectedStudent.Id,
                 SelectedEquipment.Id,
@@ -84,11 +105,11 @@ public partial class EquipmentViewModel : ObservableObject
             if (success)
             {
                 StatusMessage = "Successfully borrowed!";
-
-                // Refresh list to immediately update the UI state
-                Equipments.Clear();
                 var updatedEquipments = await _equipmentRepository.GetAllAsync();
-                foreach (var eq in updatedEquipments) Equipments.Add(eq);
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    Equipments = new ObservableCollection<Equipment>(updatedEquipments);
+                });
             }
             else
             {

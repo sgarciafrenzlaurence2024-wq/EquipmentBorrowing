@@ -2,9 +2,11 @@
 
 public class Equipment
 {
-    public int Id { get; }
-    public string Name { get; }
+    public int Id { get; private set; }
+    public string Name { get; private set; } = string.Empty;
     public bool IsAvailable { get; set; }
+
+    private Equipment() { }
 
     public Equipment(int id, string name, bool isAvailable = true)
     {
@@ -15,4 +17,6 @@ public class Equipment
 
     public void MarkAsBorrowed() => IsAvailable = false;
     public void MarkAsReturned() => IsAvailable = true;
+
+    public override string ToString() => Name;
 }

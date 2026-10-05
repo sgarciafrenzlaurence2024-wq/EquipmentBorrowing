@@ -5,6 +5,12 @@ using EquipmentBorrowing.Desktop.ViewModels;
 using EquipmentBorrowing.Desktop.Views;
 using Microsoft.Extensions.DependencyInjection;
 
+using Microsoft.EntityFrameworkCore;
+using EquipmentBorrowing.Infrastructure.Persistence;
+using EquipmentBorrowing.Infrastructure.Repositories;
+using EquipmentBorrowing.Application.Interfaces;
+using EquipmentBorrowing.Application.Services;
+
 namespace EquipmentBorrowing.Desktop;
 
 public partial class App : Avalonia.Application
@@ -13,32 +19,44 @@ public partial class App : Avalonia.Application
 
     public override void Initialize()
     {
-        var collection = new ServiceCollection();
-
-        // Register the single mock database for all three interfaces
-        var db = new EquipmentBorrowing.Infrastructure.Repositories.InMemoryRepositories();
-        collection.AddSingleton<EquipmentBorrowing.Application.Interfaces.IEquipmentRepository>(db);
-        collection.AddSingleton<EquipmentBorrowing.Application.Interfaces.IStudentRepository>(db);
-        collection.AddSingleton<EquipmentBorrowing.Application.Interfaces.IBorrowingRepository>(db);
-
-        // Register Services and ViewModels
-        collection.AddTransient<EquipmentBorrowing.Application.Services.BorrowEquipmentService>();
-        collection.AddTransient<EquipmentBorrowing.Application.Services.ReturnEquipmentService>();
-        collection.AddTransient<EquipmentViewModel>();
-        collection.AddTransient<BorrowingsViewModel>();
-
-        Services = collection.BuildServiceProvider();
-
         AvaloniaXamlLoader.Load(this);
     }
 
     public override void OnFrameworkInitializationCompleted()
     {
+        var collection = new ServiceCollection();
+
+        // Factory: repositories create a fresh, short-lived DbContext for every operation
+        collection.AddDbContextFactory<EquipmentBorrowingDbContext>();
+
+        collection.AddTransient<IEquipmentRepository, EfEquipmentRepository>();
+        collection.AddTransient<IStudentRepository, EfStudentRepository>();
+        collection.AddTransient<IBorrowingRepository, EfBorrowingRepository>();
+
+        collection.AddTransient<BorrowEquipmentService>();
+        collection.AddTransient<ReturnEquipmentService>();
+        collection.AddTransient<EquipmentViewModel>();
+        collection.AddTransient<BorrowingsViewModel>();
+        collection.AddTransient<MainWindowViewModel>();
+
+        Services = collection.BuildServiceProvider();
+
+        try
+        {
+            using var context = new EquipmentBorrowingDbContext();
+            context.Database.EnsureCreated();
+            DatabaseSeeder.Seed(context);
+        }
+        catch (System.Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"DATABASE STARTUP ERROR: {ex}");
+        }
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(),
+                DataContext = Services.GetRequiredService<MainWindowViewModel>(),
             };
         }
 

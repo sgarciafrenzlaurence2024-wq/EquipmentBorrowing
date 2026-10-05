@@ -1,58 +1,75 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EquipmentBorrowing.Application.Interfaces;
-using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Domain;
+using EquipmentBorrowing.Infrastructure.Persistence;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
 public partial class BorrowingsViewModel : ObservableObject
 {
-    private readonly ReturnEquipmentService _returnService;
-    private readonly IBorrowingRepository _borrowingRepo;
+    private readonly IBorrowingRepository _borrowingRepository;
 
-    [ObservableProperty] private ObservableCollection<Borrowing> _activeBorrowings = new();
-    [ObservableProperty] private Borrowing? _selectedBorrowing;
-    [ObservableProperty] private string? _statusMessage;
-
-    public BorrowingsViewModel(ReturnEquipmentService returnService, IBorrowingRepository borrowingRepo)
+    private ObservableCollection<Borrowing> _borrowings = new();
+    public ObservableCollection<Borrowing> Borrowings
     {
-        _returnService = returnService;
-        _borrowingRepo = borrowingRepo;
-        _ = LoadBorrowingsAsync();
+        get => _borrowings;
+        set => SetProperty(ref _borrowings, value);
     }
 
-    public async Task LoadBorrowingsAsync()
+    public IRelayCommand ResetDatabaseCommand { get; }
+
+    public BorrowingsViewModel(IBorrowingRepository borrowingRepository)
     {
-        ActiveBorrowings.Clear();
-        foreach (var b in await _borrowingRepo.GetAllAsync())
+        _borrowingRepository = borrowingRepository;
+
+        ResetDatabaseCommand = new AsyncRelayCommand(ResetDatabaseAsync);
+        // Data is loaded by MainWindowViewModel when this view is shown
+    }
+
+    public async Task LoadDataAsync()
+    {
+        try
         {
-            if (b.Status == BorrowingStatus.Active)
-                ActiveBorrowings.Add(b);
+            var borrowings = await _borrowingRepository.GetAllAsync();
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Borrowings = new ObservableCollection<Borrowing>(borrowings);
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"DB Load Error: {ex.Message}");
         }
     }
 
-    [RelayCommand]
-    private async Task ReturnAsync()
+    private async Task ResetDatabaseAsync()
     {
-        if (SelectedBorrowing == null)
+        try
         {
-            StatusMessage = "Validation Error: Select an active borrowing.";
-            return;
-        }
+            // A fresh, dedicated context just for this operation
+            using var context = new EquipmentBorrowingDbContext();
 
-        bool success = await _returnService.ExecuteAsync(SelectedBorrowing.Id);
+            context.Borrowings.RemoveRange(context.Borrowings);
+            await context.SaveChangesAsync();
 
-        if (success)
-        {
-            StatusMessage = $"Success: Returned Item ID {SelectedBorrowing.EquipmentId}.";
-            await LoadBorrowingsAsync();
+            context.Equipment.RemoveRange(context.Equipment);
+            context.Students.RemoveRange(context.Students);
+            await context.SaveChangesAsync();
+
+            DatabaseSeeder.Seed(context);
+
+            // Refresh the UI list
+            await LoadDataAsync();
         }
-        else
+        catch (Exception ex)
         {
-            StatusMessage = "Failed: Record not found.";
+            System.Diagnostics.Debug.WriteLine($"Reset failed: {ex.Message}");
         }
     }
 }

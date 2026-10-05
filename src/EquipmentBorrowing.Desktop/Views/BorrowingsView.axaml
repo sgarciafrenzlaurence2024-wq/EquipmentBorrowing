@@ -1,8 +1,30 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="EquipmentBorrowing.Desktop.Views.BorrowingsView">
-  Welcome to Avalonia!
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             x:Class="EquipmentBorrowing.Desktop.Views.BorrowingsView"
+             x:DataType="vm:BorrowingsViewModel">
+
+    <StackPanel Margin="15" Spacing="15">
+        <TextBlock Text="Active Borrowings" FontSize="22" FontWeight="Bold" />
+
+        <ListBox ItemsSource="{Binding Borrowings}" 
+                 Height="320" Background="#2B2B36" CornerRadius="8">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="10">
+                        <TextBlock Text="{Binding EquipmentId, StringFormat='Equipment ID: {0}'}" FontWeight="Bold" FontSize="16"/>
+                        <TextBlock Text="{Binding StudentId, StringFormat='Student ID: {0}'}" FontSize="14" Foreground="#AAAAAA"/>
+                        <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:MMM dd, yyyy}'}" FontSize="14" Foreground="#FFC107"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Button Content="Reset Database" 
+                Command="{Binding ResetDatabaseCommand}" 
+                Background="#D32F2F" Foreground="White" 
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" 
+                Padding="12" CornerRadius="8"/>
+    </StackPanel>
+
 </UserControl>

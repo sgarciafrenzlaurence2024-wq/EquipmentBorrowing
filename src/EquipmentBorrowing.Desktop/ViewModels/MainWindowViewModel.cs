@@ -1,29 +1,38 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
+    private readonly EquipmentViewModel _equipmentViewModel;
+    private readonly BorrowingsViewModel _borrowingsViewModel;
+
     [ObservableProperty]
-    private object _currentView;
+    private object _currentView = default!;
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(
+        EquipmentViewModel equipmentViewModel,
+        BorrowingsViewModel borrowingsViewModel)
     {
-        // Set the default launch screen
-        _currentView = App.Services?.GetRequiredService<EquipmentViewModel>()!;
+        _equipmentViewModel = equipmentViewModel;
+        _borrowingsViewModel = borrowingsViewModel;
+
+        _ = NavigateToEquipmentAsync();
     }
 
     [RelayCommand]
-    private void NavigateToEquipment()
+    private async Task NavigateToEquipmentAsync()
     {
-        CurrentView = App.Services?.GetRequiredService<EquipmentViewModel>()!;
+        CurrentView = _equipmentViewModel;
+        await _equipmentViewModel.LoadDataAsync();
     }
 
     [RelayCommand]
-    private void NavigateToBorrowings()
+    private async Task NavigateToBorrowingsAsync()
     {
-        CurrentView = App.Services?.GetRequiredService<BorrowingsViewModel>()!;
+        CurrentView = _borrowingsViewModel;
+        await _borrowingsViewModel.LoadDataAsync();
     }
 }

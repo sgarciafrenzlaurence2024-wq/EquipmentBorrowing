@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 
@@ -24,19 +23,18 @@ public class BorrowEquipmentService
     public async Task<bool> ExecuteAsync(int studentId, int equipmentId, int days)
     {
         var student = await _studentRepository.GetByIdAsync(studentId);
-        if (student == null || !student.IsAllowedToBorrow) return false; // Exists & Allowed
+        if (student == null || !student.IsAllowedToBorrow) return false;
 
         var equipment = await _equipmentRepository.GetByIdAsync(equipmentId);
-        if (equipment == null || !equipment.IsAvailable) return false; // Exists & Available
+        if (equipment == null || !equipment.IsAvailable) return false;
 
         var activeCount = await _borrowingRepository.GetActiveCountByStudentIdAsync(studentId);
-        if (activeCount >= 3) return false; // Max limit check
+        if (activeCount >= 3) return false;
 
         equipment.IsAvailable = false;
         await _equipmentRepository.UpdateAsync(equipment);
 
-        // Date calculations are now handled automatically by the constructor
-        var borrowing = new Borrowing(new Random().Next(1, 1000), studentId, equipmentId, days);
+        var borrowing = new Borrowing(0, studentId, equipmentId, days);
         await _borrowingRepository.AddAsync(borrowing);
 
         return true;
