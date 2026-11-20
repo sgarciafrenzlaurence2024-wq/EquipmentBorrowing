@@ -4,27 +4,87 @@
              x:Class="EquipmentBorrowing.Desktop.Views.BorrowingsView"
              x:DataType="vm:BorrowingsViewModel">
 
-    <StackPanel Margin="15" Spacing="15">
-        <TextBlock Text="Active Borrowings" FontSize="22" FontWeight="Bold" />
+    <ScrollViewer>
+        <StackPanel Margin="12" Spacing="10">
+            <TextBlock Text="Borrowings, Returns &amp; Search" FontSize="20" FontWeight="Bold"/>
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Height="4"/>
 
-        <ListBox ItemsSource="{Binding Borrowings}" 
-                 Height="320" Background="#2B2B36" CornerRadius="8">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Margin="10">
-                        <TextBlock Text="{Binding EquipmentId, StringFormat='Equipment ID: {0}'}" FontWeight="Bold" FontSize="16"/>
-                        <TextBlock Text="{Binding StudentId, StringFormat='Student ID: {0}'}" FontSize="14" Foreground="#AAAAAA"/>
-                        <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:MMM dd, yyyy}'}" FontSize="14" Foreground="#FFC107"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+            <Border Background="#1F1F2B" CornerRadius="8" Padding="10">
+                <StackPanel Spacing="6">
+                    <TextBox Watermark="Search student name, student #, or equipment name..." Text="{Binding SearchText}"/>
+                    <Grid ColumnDefinitions="*, *, *, Auto, Auto">
+                        <ComboBox Grid.Column="0" SelectedIndex="{Binding StatusFilterIndex}" Margin="1">
+                            <ComboBoxItem Content="All"/>
+                            <ComboBoxItem Content="Active"/>
+                            <ComboBoxItem Content="Returned"/>
+                        </ComboBox>
+                        <ComboBox Grid.Column="1" SelectedIndex="{Binding SortFieldIndex}" Margin="1">
+                            <ComboBoxItem Content="Borrowed Date"/>
+                            <ComboBoxItem Content="Expected Return"/>
+                        </ComboBox>
+                        <ComboBox Grid.Column="2" SelectedIndex="{Binding SortDirectionIndex}" Margin="1">
+                            <ComboBoxItem Content="Asc"/>
+                            <ComboBoxItem Content="Desc"/>
+                        </ComboBox>
+                        <Button Grid.Column="3" Content="Apply" Command="{Binding SearchBorrowingsCommand}" Margin="1"/>
+                        <Button Grid.Column="4" Content="Clear" Command="{Binding ClearSearchCommand}" Margin="1"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-        <Button Content="Reset Database" 
-                Command="{Binding ResetDatabaseCommand}" 
-                Background="#D32F2F" Foreground="White" 
-                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" 
-                Padding="12" CornerRadius="8"/>
-    </StackPanel>
+            <ListBox ItemsSource="{Binding Borrowings}"
+                     SelectedItem="{Binding SelectedBorrowing}"
+                     Height="210" Background="#2B2B36" CornerRadius="8">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="8">
+                            <TextBlock Text="{Binding Equipment.Name, TargetNullValue='Equipment Record'}" FontWeight="Bold" FontSize="15"/>
+                            <TextBlock Text="{Binding Student.Name, StringFormat='Student: {0}', TargetNullValue='Student Record'}" FontSize="13" Foreground="#CCCCCC"/>
+                            <TextBlock Text="{Binding Status, StringFormat='Status: {0}'}" FontSize="12" Foreground="#4FC3F7"/>
+                            <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:MMM dd, yyyy}'}" FontSize="12" Foreground="#FFC107"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
 
+            <Button Content="Return Selected Borrowing"
+                    Command="{Binding ReturnSelectedCommand}"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Background="#1976D2" Foreground="White" Padding="10" CornerRadius="8"/>
+
+            <Border Background="#1F1F2B" CornerRadius="8" Padding="10">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Histories (UC-07 Student / UC-08 Equipment)" FontWeight="Bold"/>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <ComboBox Grid.Column="0" ItemsSource="{Binding Students}" SelectedItem="{Binding HistoryStudent}" Margin="0,0,4,0">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Grid.Column="1" Content="Student History" Command="{Binding LoadStudentHistoryCommand}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <ComboBox Grid.Column="0" ItemsSource="{Binding Equipments}" SelectedItem="{Binding HistoryEquipment}" Margin="0,0,4,0">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Grid.Column="1" Content="Equipment History" Command="{Binding LoadEquipmentHistoryCommand}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="#FF7070"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"/>
+
+            <Button Content="Reset Database"
+                    Command="{Binding ResetDatabaseCommand}"
+                    Background="#D32F2F" Foreground="White"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Padding="10" CornerRadius="8"/>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

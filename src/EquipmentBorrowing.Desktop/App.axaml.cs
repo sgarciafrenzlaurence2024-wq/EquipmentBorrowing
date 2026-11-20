@@ -1,21 +1,21 @@
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using EquipmentBorrowing.Desktop.ViewModels;
-using EquipmentBorrowing.Desktop.Views;
-using Microsoft.Extensions.DependencyInjection;
-
 using Microsoft.EntityFrameworkCore;
-using EquipmentBorrowing.Infrastructure.Persistence;
-using EquipmentBorrowing.Infrastructure.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
+using EquipmentBorrowing.Desktop.ViewModels;
+using EquipmentBorrowing.Desktop.Views;
+using EquipmentBorrowing.Infrastructure.Persistence;
+using EquipmentBorrowing.Infrastructure.Repositories;
 
 namespace EquipmentBorrowing.Desktop;
 
 public partial class App : Avalonia.Application
 {
-    public static System.IServiceProvider? Services { get; private set; }
+    public static IServiceProvider? Services { get; private set; }
 
     public override void Initialize()
     {
@@ -26,15 +26,25 @@ public partial class App : Avalonia.Application
     {
         var collection = new ServiceCollection();
 
-        // Factory: repositories create a fresh, short-lived DbContext for every operation
-        collection.AddDbContextFactory<EquipmentBorrowingDbContext>();
+        var connectionString = Environment.GetEnvironmentVariable(EquipmentBorrowingDbContext.ConnectionStringEnvVar)
+            ?? throw new InvalidOperationException(
+                $"Missing PostgreSQL connection string. Set the '{EquipmentBorrowingDbContext.ConnectionStringEnvVar}' environment variable.");
+
+        collection.AddDbContextFactory<EquipmentBorrowingDbContext>(options =>
+            options.UseNpgsql(connectionString));
 
         collection.AddTransient<IEquipmentRepository, EfEquipmentRepository>();
         collection.AddTransient<IStudentRepository, EfStudentRepository>();
         collection.AddTransient<IBorrowingRepository, EfBorrowingRepository>();
+        collection.AddTransient<IDatabaseResetService, DatabaseResetService>();
 
         collection.AddTransient<BorrowEquipmentService>();
         collection.AddTransient<ReturnEquipmentService>();
+        collection.AddTransient<MultiItemCheckoutService>();
+        collection.AddTransient<StudentManagementService>();
+        collection.AddTransient<EquipmentManagementService>();
+        collection.AddTransient<BorrowingQueryService>();
+
         collection.AddTransient<EquipmentViewModel>();
         collection.AddTransient<BorrowingsViewModel>();
         collection.AddTransient<MainWindowViewModel>();
@@ -43,11 +53,12 @@ public partial class App : Avalonia.Application
 
         try
         {
-            using var context = new EquipmentBorrowingDbContext();
-            context.Database.EnsureCreated();
+            var factory = Services.GetRequiredService<IDbContextFactory<EquipmentBorrowingDbContext>>();
+            using var context = factory.CreateDbContext();
+            context.Database.Migrate();
             DatabaseSeeder.Seed(context);
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"DATABASE STARTUP ERROR: {ex}");
         }

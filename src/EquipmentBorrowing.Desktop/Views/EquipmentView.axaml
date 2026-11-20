@@ -2,29 +2,41 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
              x:Class="EquipmentBorrowing.Desktop.Views.EquipmentView"
-             x:DataType="vm:EquipmentViewModel">
+             x:DataType="vm:EquipmentViewModel"
+             x:Name="RootView">
 
     <ScrollViewer>
-        <StackPanel Margin="15" Spacing="15">
-            <TextBlock Text="Available Equipment" FontSize="22" FontWeight="Bold" />
+        <StackPanel Margin="12" Spacing="12">
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBlock Grid.Column="0" Text="Equipment Catalog" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Content="{Binding ShowAvailableOnly, StringFormat='Available Only: {0}'}"
+                        Command="{Binding ToggleAvailableFilterCommand}"
+                        Padding="10,6"/>
+            </Grid>
 
-            <ListBox ItemsSource="{Binding Equipments}" 
-                     SelectedItem="{Binding SelectedEquipment}" 
-                     Height="200" Background="#2B2B36" CornerRadius="8">
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Height="4"/>
+
+            <ListBox x:Name="EquipmentListBox"
+                     ItemsSource="{Binding Equipments}"
+                     SelectedItem="{Binding SelectedEquipment}"
+                     SelectionMode="Multiple"
+                     Height="170" Background="#2B2B36" CornerRadius="8">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Margin="5">
-                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16"/>
+                        <StackPanel Margin="6">
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="15"/>
+                            <TextBlock Text="{Binding Code, StringFormat='Code: {0}'}" FontSize="12" Foreground="#CCCCCC"/>
                             <TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}" FontSize="12" Foreground="#4CAF50"/>
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <TextBlock Text="Select Student" FontWeight="SemiBold" Margin="0,10,0,0"/>
-            <ComboBox ItemsSource="{Binding Students}" 
-                      SelectedItem="{Binding SelectedStudent}" 
-                      HorizontalAlignment="Stretch" Padding="10">
+            <TextBlock Text="Select Student" FontWeight="SemiBold"/>
+            <ComboBox ItemsSource="{Binding Students}"
+                      SelectedItem="{Binding SelectedStudent}"
+                      HorizontalAlignment="Stretch" Padding="8">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Name}" />
@@ -32,21 +44,55 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
 
-            <TextBlock Text="Expected Return Date" FontWeight="SemiBold" Margin="0,10,0,0"/>
+            <TextBlock Text="Expected Return Date" FontWeight="SemiBold"/>
             <DatePicker SelectedDate="{Binding ExpectedReturnDate}" HorizontalAlignment="Stretch" />
 
-            <Button Content="Borrow Equipment" 
-                    Command="{Binding BorrowCommand}" 
-                    HorizontalAlignment="Stretch" 
-                    HorizontalContentAlignment="Center" 
-                    Background="#007ACC" Foreground="White" 
-                    Padding="15" Margin="0,20,0,0" CornerRadius="8"/>
+            <Grid ColumnDefinitions="*, *">
+                <Button Grid.Column="0"
+                        Content="Borrow Selected"
+                        Command="{Binding BorrowCommand}"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Background="#007ACC" Foreground="White" Padding="10" Margin="0,0,4,0"/>
+                <Button Grid.Column="1"
+                        Content="Checkout Multi (2+)"
+                        Command="{Binding CheckoutMultipleCommand}"
+                        CommandParameter="{Binding #EquipmentListBox.SelectedItems}"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Background="#2E7D32" Foreground="White" Padding="10" Margin="4,0,0,0"/>
+            </Grid>
 
-            <TextBlock Text="{Binding StatusMessage}" 
-                       Foreground="#FF5252" 
-                       FontWeight="SemiBold" 
-                       TextWrapping="Wrap" 
-                       Margin="0,10,0,0"
+            <Border Background="#1F1F2B" CornerRadius="8" Padding="10">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Student Management (UC-12 / UC-13 / UC-14)" FontWeight="Bold"/>
+                    <TextBox Watermark="Student Number (e.g., STU-0004)" Text="{Binding StudentNumberInput}"/>
+                    <TextBox Watermark="Full Name" Text="{Binding StudentNameInput}"/>
+                    <TextBox Watermark="Optional Contact" Text="{Binding StudentContactInput}"/>
+                    <Grid ColumnDefinitions="*, *, *, *">
+                        <Button Grid.Column="0" Content="Register" Command="{Binding RegisterStudentCommand}" Margin="1" HorizontalAlignment="Stretch"/>
+                        <Button Grid.Column="1" Content="Update" Command="{Binding UpdateStudentCommand}" Margin="1" HorizontalAlignment="Stretch"/>
+                        <Button Grid.Column="2" Content="Permit" Command="{Binding SetEligibilityCommand}" CommandParameter="Permit" Margin="1" HorizontalAlignment="Stretch"/>
+                        <Button Grid.Column="3" Content="Restrict" Command="{Binding SetEligibilityCommand}" CommandParameter="Restrict" Margin="1" HorizontalAlignment="Stretch"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#1F1F2B" CornerRadius="8" Padding="10">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Equipment Management (UC-15 / UC-16)" FontWeight="Bold"/>
+                    <TextBox Watermark="Equipment Code (e.g., EQ-0004)" Text="{Binding EquipmentCodeInput}"/>
+                    <TextBox Watermark="Equipment Name" Text="{Binding EquipmentNameInput}"/>
+                    <TextBox Watermark="Optional Description" Text="{Binding EquipmentDescriptionInput}"/>
+                    <Grid ColumnDefinitions="*, *">
+                        <Button Grid.Column="0" Content="Register Item" Command="{Binding RegisterEquipmentCommand}" Margin="2" HorizontalAlignment="Stretch"/>
+                        <Button Grid.Column="1" Content="Update Item" Command="{Binding UpdateEquipmentCommand}" Margin="2" HorizontalAlignment="Stretch"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="#FF7070"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
                        HorizontalAlignment="Center"/>
         </StackPanel>
     </ScrollViewer>

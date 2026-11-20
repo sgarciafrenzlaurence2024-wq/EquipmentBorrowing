@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Infrastructure.Persistence;
@@ -7,27 +8,27 @@ public static class DatabaseSeeder
 {
     public static void Seed(EquipmentBorrowingDbContext context)
     {
-        // Only inject data if the Students table is completely empty
+        if (context is null)
+            throw new ArgumentNullException(nameof(context));
+
         if (!context.Students.Any())
         {
             context.Students.AddRange(
-                new Student(1, "Alice Smith"),
-                new Student(2, "Bob Johnson"),
-                new Student(3, "Charlie Brown")
+                new Student("STU-0001", "Frenz Laurence", "frenz@campus.edu", isAllowedToBorrow: true),
+                new Student("STU-0002", "Katyy Dyy", "katyy@campus.edu", isAllowedToBorrow: true),
+                new Student("STU-0003", "Kirzten Sunshine", null, isAllowedToBorrow: false)
             );
         }
 
-        // Only inject data if the Equipment table is completely empty
         if (!context.Equipment.Any())
         {
             context.Equipment.AddRange(
-                new Equipment(1, "Sony Projector"),
-                new Equipment(2, "Dell XPS Laptop"),
-                new Equipment(3, "Wireless Microphone")
+                new Equipment("EQ-0001", "Sony Projector", "Classroom HDMI projector", isAvailable: true),
+                new Equipment("EQ-0002", "Dell XPS Laptop", "Lab presentation laptop", isAvailable: true),
+                new Equipment("EQ-0003", "Wireless Microphone", "Handheld wireless microphone", isAvailable: true)
             );
         }
 
-        // Save these initial records to the SQLite file
         context.SaveChanges();
     }
 }
